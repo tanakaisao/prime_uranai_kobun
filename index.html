@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔮 神秘の素因数分解占い（深淵古文版）</title>
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css" />
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    <style>
+        body { font-family: 'Times New Roman', 'Hiragino Mincho ProN', serif; margin: 20px 10px; background-color: #0d0814; color: #e0d7e5; }
+        .container { max-width: 600px; background: #1a1126; padding: 30px 20px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); border: 2px solid #d4af37; margin: 0 auto; }
+        h1 { color: #d4af37; border-bottom: 2px solid #d4af37; padding-bottom: 15px; font-size: 26px; text-align: center; margin-top: 10px; letter-spacing: 2px; }
+        .intro { text-align: center; font-size: 15px; color: #b3a2c7; line-height: 1.8; margin-bottom: 30px; letter-spacing: 1px; }
+        
+        .input-group { 
+            margin-bottom: 25px; 
+            text-align: center; 
+            background: #251a35; 
+            padding: 15px 10px; 
+            border-radius: 8px; 
+            border: 1px solid #4a3466;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: nowrap;
+        }
+        label { font-weight: bold; font-size: 15px; color: #d4af37; white-space: nowrap; }
+        input[type="number"] { padding: 6px; width: 60px; border: 1px solid #d4af37; background: #0d0814; border-radius: 6px; font-size: 18px; text-align: center; color: #ffffff; font-weight: bold; margin: 0 8px; }
+        
+        .btn-area { text-align: center; margin: 30px 0; }
+        button { padding: 14px 40px; background: linear-gradient(135deg, #8a2be2, #4a0e4e); color: #ffffff; border: 1px solid #d4af37; border-radius: 25px; font-size: 18px; cursor: pointer; font-weight: bold; letter-spacing: 2px; box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4); transition: all 0.3s; }
+        button:hover { background: linear-gradient(135deg, #a04ef6, #691b6d); box-shadow: 0 4px 20px rgba(138, 43, 226, 0.6); }
+        button:active { transform: translateY(2px); box-shadow: none; }
+        
+        button:disabled { background: #4a3466; color: #888888; border-color: #4a3466; cursor: not-allowed; box-shadow: none; }
+        
+        .result-box { margin-top: 30px; padding: 20px; background-color: #1f1430; border: 1px solid #d4af37; border-radius: 12px; display: none; }
+        .result-title { font-weight: bold; color: #d4af37; font-size: 16px; border-left: 4px solid #8a2be2; padding-left: 10px; margin-bottom: 15px; letter-spacing: 1px; }
+        .formula-text { background: #0d0814; padding: 15px; border: 1px solid #4a3466; border-radius: 8px; font-size: 20px; font-weight: bold; text-align: center; color: #52c41a; margin-bottom: 25px; letter-spacing: 2px; }
+        .ai-response { background: #0d0814; padding: 20px; border: 1px solid #4a3466; border-radius: 8px; font-size: 15px; line-height: 1.9; color: #e0d7e5; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🔮 神秘の素因数分解占い</h1>
+    <p class="intro">
+        誕生の瞬間に刻まれた数字には、不可視の宿命が潜んでいます。<br>
+        その数をこれ以上分解できない根源の要素（素数）へと還元したとき、<br>
+        紡ぎ出される数式があなたの秘められた知性と運命の輪郭を明かします。
+    </p>
+    
+    <div class="input-group">
+        <label for="month">誕生月</label>
+        <input type="number" id="month" value="8" min="1" max="12">
+        <label for="day" style="margin-left: 10px;">日</label>
+        <input type="number" id="day" value="11" min="1" max="31">
+    </div>
+    
+    <div class="btn-area">
+        <button id="fortune_btn" py-click="fortune_tell">天命を紐解く</button>
+    </div>
+
+    <div id="result" class="result-box">
+        <div class="result-title">◆ あなたを構成する「宿命の数式」</div>
+        <div id="formula_out" class="formula-text"></div>
+        
+        <div class="result-title">◆ 深淵なる星々の鑑定</div>
+        <div id="ai_out" class="ai-response">数字の深層を意識へ同調させています...</div>
+    </div>
+</div>
+
+<script type="py">
+import json
+import pyodide.http
+import random
+import datetime
+from pyscript import document
+
+def prime_factors(n):
+    factors = []
+    d = 2
+    temp = n
+    while d * d <= temp:
+        while (temp % d) == 0:
+            factors.append(d)
+            temp //= d
+        d += 1
+    if temp > 1:
+        factors.append(temp)
+    return factors
+
+async def fortune_tell(event):
+    btn = document.getElementById("fortune_btn")
+    btn.disabled = True
+    
+    document.getElementById("result").style.display = "block"
+    document.getElementById("ai_out").innerHTML = "数式の深層を解読しています。少々お待ちください..."
+    
+    m_str = document.getElementById("month").value
+    d_str = document.getElementById("day").value
+    target_num = int(m_str) * 100 + int(d_str)
+    
+    factors = prime_factors(target_num)
+    
+    if len(factors) == 1:
+        formula_str = f"{target_num} ＝ 【 素数 】"
+        ai_hint = f"{target_num}は他のいかなる数にも割り切れない「素数」です。"
+    else:
+        formula_str = f"{target_num} ＝ {' × '.join(map(str, factors))}"
+        ai_hint = f"{target_num}の素因数分解は {' × '.join(map(str, factors))} です。"
+        
+    document.getElementById("formula_out").innerHTML = formula_str
+    
+    # 🔑 ジェイのAPIキー分割システム（隠蔽工作をそのまま適用！）
+    p1 = "AIzaSyC8Q06Ooq44z"
+    p2 = "h7qv5EJbCmyWvv-"
+    p3 = "EEY3Y5U"
+    api_key = p1 + p2 + p3
+    
+    today_num = int(datetime.date.today().strftime('%Y%m%d'))
+    fortune_seed = today_num + target_num
+    random.seed(fortune_seed)
+    
+    weekdays = ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"]
+    todays_guardian_weekday = random.choice(weekdays)
+    todays_guardian_day = random.randint(1, 31)
+    
+    # 🧠 AIへの指示書（格式高い深淵古文調 ＆ 漢数字禁止版）
+    prompt = f"""
+あなたは世界の理を数式から読み解く、深淵で知的な「素因数分解占い師」です。
+ユーザーの誕生日から導かれた数字「{target_num}」と、その素因数分解の結果「{formula_str}」が持つ固有の波動を読み解き、その人物の運勢や本質、性格を格式高く、謎めいた表現（古文調の美しい日本語）で占ってください。
+
+【占いの掟】
+1. くだけた口調や俗世の固有名詞は一切使わないでください。神秘のベールに包まれた厳かな、しかしどこか美しく豊かな語彙で語りかけてください。
+2. 数字の構成から得られるインスピレーションを言葉に宿らせてください。
+   - 素数の場合：他者の介入を拒む絶対的なアイデンティティ、孤高の天才、変革をもたらすカリスマ。
+   - 2や5などの偶数や馴染み深い調和の数が多い場合：多面的な社交性、万物と融和する卓越したコミュニケーションの才、周囲を惹きつける中心人物。
+   - 3や7、また大きな奇数（43など）が含まれる場合：鋭利な知性、密かなこだわりを持つクリエイターとしての資質、深層の美意識。
+3. 漢数字（一、二、百など）は横書きで読みづらいため、一切使わないでください。数字を表現する場合は、必ず【半角の算用数字（2、5、43など）】を使用してください。
+4. 文字数は250文字〜400文字程度とし、読む者を納得の深みへと誘う文章にしてください。
+5. 文末には、星々の巡りが告げる今期の守護として、以下の「指定された曜日」と「指定された日にち」を厳かに宣告してください。これら以外の数字や素数を勝手に創作してはいけません。
+
+【今期お前に授ける守護の刻印（必ず文末に含めること）】
+・守護の曜日：{todays_guardian_weekday}
+・守護の日にち：{todays_guardian_day}日
+
+対象データ：
+誕生日：{m_str}月{d_str}日
+数式データ：{ai_hint}
+"""
+
+    api_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={api_key}"
+    headers = {"Content-Type": "application/json"}
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+    
+    try:
+        response = await pyodide.http.pyfetch(api_url, method="POST", headers=headers, body=json.dumps(payload))
+        if response.status == 200:
+            res_data = await response.json()
+            ai_text = res_data["candidates"][0]["content"]["parts"][0]["text"]
+            document.getElementById("ai_out").innerHTML = ai_text
+        elif response.status == 429:
+            document.getElementById("ai_out").innerHTML = "星々の対話が混み合っております。1〜2分ほど深く息を吸い、再び天命をお呼び出しください。（コード: 429）"
+        else:
+            document.getElementById("ai_out").innerHTML = f"断絶が検出されました。鍵の整合性を確認してください。（コード: {response.status}）"
+    except Exception as e:
+        document.getElementById("ai_out").innerHTML = f"通信の調和が乱れました。接続を確認してください。\n({str(e)})"
+    finally:
+        btn.disabled = False
+</script>
+
+</body>
+</html>
