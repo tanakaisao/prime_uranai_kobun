@@ -97,73 +97,50 @@ async def fortune_tell(event):
     document.getElementById("result").style.display = "block"
     document.getElementById("ai_out").innerHTML = "数式の深層を解読しています。少々お待ちください..."
     
+    # 1. 画面から誕生日をゲットする
     m_str = document.getElementById("month").value
     d_str = document.getElementById("day").value
     target_num = int(m_str) * 100 + int(d_str)
     
+    # 2. 画面に表示する用の数式を計算して出す
     factors = prime_factors(target_num)
-    
     if len(factors) == 1:
         formula_str = f"{target_num} ＝ 【 素数 】"
-        ai_hint = f"{target_num}は他のいかなる数にも割り切れない「素数」です。"
     else:
         formula_str = f"{target_num} ＝ {' × '.join(map(str, factors))}"
-        ai_hint = f"{target_num}の素因数分解は {' × '.join(map(str, factors))} です。"
         
     document.getElementById("formula_out").innerHTML = formula_str
     
-    # 🔑 ジェイのAPIキー分割システム（隠蔽工作をそのまま適用！）
-    p1 = "AIzaSyC8Q06Ooq44z"
-    p2 = "h7qv5EJbCmyWvv-"
-    p3 = "EEY3Y5U"
-    api_key = p1 + p2 + p3
-    
-    today_num = int(datetime.date.today().strftime('%Y%m%d'))
-    fortune_seed = today_num + target_num
-    random.seed(fortune_seed)
-    
-    weekdays = ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"]
-    todays_guardian_weekday = random.choice(weekdays)
-    todays_guardian_day = random.randint(1, 31)
-    
-    # 🧠 AIへの指示書（格式高い深淵古文調 ＆ 漢数字禁止版）
-    prompt = f"""
-あなたは世界の理を数式から読み解く、深淵で知的な「素因数分解占い師」です。
-ユーザーの誕生日から導かれた数字「{target_num}」と、その素因数分解の結果「{formula_str}」が持つ固有の波動を読み解き、その人物の運勢や本質、性格を格式高く、謎めいた表現（古文調の美しい日本語）で占ってください。
-
-【占いの掟】
-1. くだけた口調や俗世の固有名詞は一切使わないでください。神秘のベールに包まれた厳かな、しかしどこか美しく豊かな語彙で語りかけてください。
-2. 数字の構成から得られるインスピレーションを言葉に宿らせてください。
-   - 素数の場合：他者の介入を拒む絶対的なアイデンティティ、孤高の天才、変革をもたらすカリスマ。
-   - 2や5などの偶数や馴染み深い調和の数が多い場合：多面的な社交性、万物と融和する卓越したコミュニケーションの才、周囲を惹きつける中心人物。
-   - 3や7、また大きな奇数（43など）が含まれる場合：鋭利な知性、密かなこだわりを持つクリエイターとしての資質、深層の美意識。
-3. 漢数字（一、二、百など）は横書きで読みづらいため、一切使わないでください。数字を表現する場合は、必ず【半角の算用数字（2、5、43など）】を使用してください。
-4. 文字数は250文字〜400文字程度とし、読む者を納得の深みへと誘う文章にしてください。
-5. 文末には、星々の巡りが告げる今期の守護として、以下の「指定された曜日」と「指定された日にち」を厳かに宣告してください。これら以外の数字や素数を勝手に創作してはいけません。
-
-【今期お前に授ける守護の刻印（必ず文末に含めること）】
-・守護の曜日：{todays_guardian_weekday}
-・守護の日にち：{todays_guardian_day}日
-
-対象データ：
-誕生日：{m_str}月{d_str}日
-数式データ：{ai_hint}
-"""
-
-    api_url = f"https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key={api_key}"
+    # 🌟 【ここからが新しいルート！】 Renderの隠しサーバーへデータを送る準備
+    api_url = "https://prime-uranai-api.onrender.com/uranai"
     headers = {"Content-Type": "application/json"}
-    payload = {"contents": [{"parts": [{"text": prompt}]}]}
-    
+		
+
+    # 📦 RenderのPythonが待っている「month」と「day」だけを届ける！
+    payload = {
+        "month": int(m_str),
+        "day": int(d_str)
+    }
+	
     try:
-        response = await pyodide.http.pyfetch(api_url, method="POST", headers=headers, body=json.dumps(payload))
+        # 🚀 Renderサーバーへ突撃！
+        response = await pyodide.http.pyfetch(
+            api_url, 
+            method="POST", 
+            headers=headers, 
+            body=json.dumps(payload)
+        )
+        
         if response.status == 200:
             res_data = await response.json()
-            ai_text = res_data["candidates"][0]["content"]["parts"][0]["text"]
+            # Renderから返ってきた「占いのテキスト」をそのまま画面に出す！
+            ai_text = res_data.get("fortune", "占いの結果が空っぽだべさ")
             document.getElementById("ai_out").innerHTML = ai_text
         elif response.status == 429:
             document.getElementById("ai_out").innerHTML = "星々の対話が混み合っております。1〜2分ほど深く息を吸い、再び天命をお呼び出しください。（コード: 429）"
         else:
-            document.getElementById("ai_out").innerHTML = f"断絶が検出されました。鍵の整合性を確認してください。（コード: {response.status}）"
+            document.getElementById("ai_out").innerHTML = f"隠しサーバーから応答がありません。（コード: {response.status}）"
+            
     except Exception as e:
         document.getElementById("ai_out").innerHTML = f"通信の調和が乱れました。接続を確認してください。\n({str(e)})"
     finally:
